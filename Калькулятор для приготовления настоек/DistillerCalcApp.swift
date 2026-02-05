@@ -9,6 +9,7 @@ struct DistillerCalcApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(themeSettings)
+                .preferredColorScheme(themeSettings.effectiveColorScheme)
         }
     }
 }

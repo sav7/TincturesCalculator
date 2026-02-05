@@ -18,16 +18,16 @@ class ThemeSettings: ObservableObject {
     init() {
         let raw = UserDefaults.standard.string(forKey: "themeMode")
         self.theme = ThemeMode(rawValue: raw ?? "") ?? .system
+    }
         
-        var effectiveColorScheme: ColorScheme? {
-            switch theme {
-            case .system:
-                return nil
-            case .light:
-                return .light
-            case .dark:
-                return .dark
+    var effectiveColorScheme: ColorScheme? {
+        switch theme {
+        case .system:
+            return nil
+        case .light:
+            return .light
+        case .dark:
+            return .dark
             }
         }
     }
-}
