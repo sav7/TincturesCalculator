@@ -7,80 +7,124 @@ struct MixingCalculatorView: View {
     @State private var strength2: String = ""
     @State private var resultStrength: Double = 0.0
     @State private var showingSaveAlert = false
+    @State private var showingDonation = false
     @State private var calculationName = ""
     @AppStorage("savedCalculations") private var savedCalculationsData: Data = Data()
+    @State private var isKeyboardVisible = false
+    @State private var showWaterError = false
     
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Иконка
-                    Image(systemName: "flask.fill")
-                        .font(.system(size: 60))
-                        .foregroundColor(.blue)
-                        .padding(.top, 20)
-                    
-                    Text("Калькулятор смешивания алкоголя")
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
-                    
-                    // Форма ввода
-                    VStack(spacing: 16) {
-                        InputGroup(title: "Первый спирт") {
-                            HStack(spacing: 12) {
-                                InputField(title: "Объём", value: $volume1, unit: "литров")
-                                InputField(title: "Крепость", value: $strength1, unit: "°")
-                            }
-                        }
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // Иконка
+                        Image(systemName: "flask.fill")
+                            .font(.system(size: 60))
+                            .foregroundColor(.blue)
+                            .padding(.top, 20)
                         
-                        InputGroup(title: "Второй спирт") {
-                            HStack(spacing: 12) {
-                                InputField(title: "Объём", value: $volume2, unit: "литров")
-                                InputField(title: "Крепость", value: $strength2, unit: "°")
+                        Text("Смешение спиртов")
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                        
+                        // Форма ввода
+                        VStack(spacing: 16) {
+                            InputGroup(title: "Спирт 1") {
+                                HStack(spacing: 12) {
+                                    InputField(title: "Объём спирта 1", value: $volume1, unit: "литров")
+                                    InputField(title: "Крепость спирта 1", value: $strength1, unit: "°")
+                                }
+                            }
+                            
+                            InputGroup(title: "Спирт 2") {
+                                HStack(spacing: 12) {
+                                    InputField(title: "Объём спирта 2", value: $volume2, unit: "литров")
+                                    InputField(title: "Крепость спирта 2", value: $strength2, unit: "°")
+                                }
                             }
                         }
-                    }
-                    .padding(.horizontal)
-                    
-                    // Кнопка расчёта
-                    Button(action: calculate) {
-                        Text("Рассчитать")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.blue)
-                            .cornerRadius(12)
-                    }
-                    .padding(.horizontal)
-                    
-                    // Результат
-                    if resultStrength > 0 {
-                        ResultCard(
-                            title: "КРЕПОСТЬ ЖИДКОСТИ:",
-                            value: String(format: "%.2f°", resultStrength),
-                            onSave: { showingSaveAlert = true }
-                        )
                         .padding(.horizontal)
+                        
+                        // Кнопка расчёта
+                        Button(action: calculate) {
+                            Text("Рассчитать")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.blue)
+                                .cornerRadius(12)
+                        }
+                        .padding(.horizontal)
+                        
+                        // Результат или ошибка
+                        if showWaterError {
+                            // Пасхалка: попытка смешать с водой
+                            VStack(spacing: 12) {
+                                Text("Ну куда ты воду лить собрался")
+                                    .font(.headline)
+                                    .foregroundColor(.red)
+                                    .strikethrough()
+                                
+                                Text("Данный расчёт можно провести в разделе «Разбавление спирта водой»")
+                                    .font(.subheadline)
+                                    .foregroundColor(.red)
+                                    .multilineTextAlignment(.center)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(20)
+                            .background(Color.red.opacity(0.1))
+                            .cornerRadius(12)
+                            .padding(.horizontal)
+                        } else if resultStrength > 0 {
+                            ResultCard(
+                                title: "КРЕПОСТЬ ЖИДКОСТИ:",
+                                value: String(format: "%.2f°", resultStrength),
+                                onSave: { showingSaveAlert = true }
+                            )
+                            .padding(.horizontal)
+                        }
                     }
-                    
-                    Spacer()
-                    
-                    Text("Данные результаты актуальны и верны\nпри температуре компонентов равной 20°C")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.bottom, 20)
+                }
+                
+                // Кнопка поддержки внизу
+                if !isKeyboardVisible {
+                    Button(action: { showingDonation = true }) {
+                        HStack {
+                            Image(systemName: "heart.fill")
+                                .font(.title3)
+                            Text("Поддержать автора")
+                                .font(.headline)
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(
+                            LinearGradient(
+                                gradient: Gradient(colors: [Color.red, Color.pink]),
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .cornerRadius(12)
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
                 }
             }
-            .contentShape(Rectangle())
-            .onTapGesture {
-                hideKeyboard()
-            }
-            .scrollDismissesKeyboard(.interactively)
             .navigationBarTitleDisplayMode(.inline)
+                        .onTapGesture {
+                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                        }
+                        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+                            isKeyboardVisible = true
+                        }
+                        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+                            isKeyboardVisible = false
+                        }
             .alert("Сохранить расчёт", isPresented: $showingSaveAlert) {
                 TextField("Название расчёта", text: $calculationName)
                 Button("Отмена", role: .cancel) {
@@ -90,28 +134,33 @@ struct MixingCalculatorView: View {
                     saveCalculation()
                 }
             }
+            .sheet(isPresented: $showingDonation) {
+                DonationView()
+            }
         }
     }
     
-    private func hideKeyboard() {
-        UIApplication.shared.sendAction(
-            #selector(UIResponder.resignFirstResponder),
-            to: nil,
-            from: nil,
-            for: nil
-        )
-    }
-    
-    private func parseDouble(_ text: String) -> Double? {
-        let normalized = text.replacingOccurrences(of: ",", with: ".")
-        return Double(normalized)
-    }
-    
     private func calculate() {
-        guard let v1 = parseDouble(volume1),
-              let s1 = parseDouble(strength1),
-              let v2 = parseDouble(volume2),
-              let s2 = parseDouble(strength2) else {
+        // Сбрасываем ошибку
+        showWaterError = false
+        resultStrength = 0.0
+        
+        // Заменяем запятые на точки для корректного парсинга
+        let v1String = volume1.replacingOccurrences(of: ",", with: ".")
+        let s1String = strength1.replacingOccurrences(of: ",", with: ".")
+        let v2String = volume2.replacingOccurrences(of: ",", with: ".")
+        let s2String = strength2.replacingOccurrences(of: ",", with: ".")
+        
+        guard let v1 = Double(v1String),
+              let s1 = Double(s1String),
+              let v2 = Double(v2String),
+              let s2 = Double(s2String) else {
+            return
+        }
+        
+        // 🥚 Пасхалка: попытка смешать спирт с водой
+        if s1 == 0 || s2 == 0 {
+            showWaterError = true
             return
         }
         
